@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 contract EthPool is Ownable {
     struct DepositAgreement {
@@ -9,46 +10,53 @@ contract EthPool is Ownable {
         uint256 subtractRewards;
     }
 
-    mapping(address => DepositAgreement) deposits;
+    mapping(address => DepositAgreement) public deposits;
 
-    uint256 totalDepositAmount;
+    uint256 public totalDepositAmount;
 
-    uint256 cumulatedRewardsPerShare;
+    uint256 private cumulatedRewardsPerDividend;
+
+    uint256 public constant CUMULATED_REWARDS_MULTIPLIER = 1e9;
 
     // events
     event NewDeposit(address indexed user, uint256 amount);
 
-    event WithdrawDeposit(address indexed user, uint256 amount, uint256 rewards);
+    event WithdrawDeposit(address indexed user, uint256 amount);
 
     event NewRewards(uint256 amount);
 
+    constructor() Ownable() {}
 
     function deposit() external payable {
         DepositAgreement storage agreement = deposits[msg.sender];
-        agreement.amount += msg.value;
-        agreement.subtractRewards = (cumulatedRewardsPerShare * msg.value);
+        require(agreement.amount == 0, "Not allowed multiple deposit");
+
+        agreement.amount = msg.value;
+        agreement.subtractRewards = (cumulatedRewardsPerDividend * msg.value);
 
         totalDepositAmount += msg.value;
 
         emit NewDeposit(msg.sender, msg.value);
     }
 
-    function withdraw(uint256 amount) external {
+    function withdraw() external {
         DepositAgreement storage agreement = deposits[msg.sender];
-        require((agreement.amount >= amount) && (amount > 0), "Invalid amount");
+        require(agreement.amount > 0, "Invalid amount");
 
-        uint256 pendingRewards = agreement.amount * cumulatedRewardsPerShare - agreement.subtractRewards;
-        agreement.amount -= amount;
-        agreement.subtractRewards += pendingRewards;
+        uint256 amount = agreement.amount;
+        uint256 rewards = (amount * cumulatedRewardsPerDividend ) / CUMULATED_REWARDS_MULTIPLIER - agreement.subtractRewards;
+
         totalDepositAmount -= amount;
+        agreement.amount = 0;
+        agreement.subtractRewards = 0;
 
-        payable(msg.sender).transfer(amount + pendingRewards);
+        payable(msg.sender).transfer(amount + rewards);
 
-        emit WithdrawDeposit(msg.sender, amount, pendingRewards);
+        emit WithdrawDeposit(msg.sender, amount);
     }
 
     function addNewReward() external payable onlyOwner {
-        cumulatedRewardsPerShare += msg.value / totalDepositAmount;
+        cumulatedRewardsPerDividend += (msg.value * CUMULATED_REWARDS_MULTIPLIER / totalDepositAmount);
 
         emit NewRewards(msg.value);
     }
