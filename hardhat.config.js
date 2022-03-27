@@ -12,6 +12,17 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
+task("ethpool", "Prints the status of EthPool")
+  .addParam("address", "The contract's address")
+  .setAction(async (taskArgs) => {
+    console.log("Getting status from EthPool at", taskArgs.address);
+    const EthPool = await hre.ethers.getContractFactory("EthPool");
+    const ethPool = await EthPool.attach(taskArgs.address);
+
+    const totalDepositAmount = await ethPool.totalDepositAmount();
+    console.log("Total Deposited ETH: ", ethers.utils.formatEther(totalDepositAmount));
+  })
+
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 

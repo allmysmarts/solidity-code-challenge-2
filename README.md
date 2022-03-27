@@ -21,3 +21,7 @@ https://github.com/exactly-finance/challenge
 ### Test
 
 - `npx hardhat test`
+
+### Script to get status from EthPool
+
+- `npx hardhat ethpool --address 0x835f17a6cc794156fFB697Fa8AeC9538dcB4F388 --network rinkeby`
