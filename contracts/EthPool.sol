@@ -43,7 +43,9 @@ contract EthPool is Ownable {
         require(agreement.amount > 0, "Invalid amount");
 
         uint256 amount = agreement.amount;
-        uint256 rewards = (amount * cumulatedRewardsPerDividend ) / CUMULATED_REWARDS_MULTIPLIER - agreement.subtractRewards;
+        uint256 rewards = (amount * cumulatedRewardsPerDividend) /
+            CUMULATED_REWARDS_MULTIPLIER -
+            agreement.subtractRewards;
 
         totalDepositAmount -= amount;
         agreement.amount = 0;
@@ -55,7 +57,8 @@ contract EthPool is Ownable {
     }
 
     function addNewReward() external payable onlyOwner {
-        cumulatedRewardsPerDividend += (msg.value * CUMULATED_REWARDS_MULTIPLIER / totalDepositAmount);
+        cumulatedRewardsPerDividend += ((msg.value *
+            CUMULATED_REWARDS_MULTIPLIER) / totalDepositAmount);
 
         emit NewRewards(msg.value);
     }
